@@ -230,4 +230,4 @@ def exit_with_reward(request):
         print(level)
         return JsonResponse({'level': level})
     else:
-        return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
