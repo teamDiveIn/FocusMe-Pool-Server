@@ -10,7 +10,7 @@ from pool.models import Pool, Member
 from django_redis import get_redis_connection
 import jwt
 from configuration import basic_config as bc
-import datetime
+from datetime import datetime
 
 # Redis
 pool_token_dao = get_redis_connection("default")
@@ -23,7 +23,7 @@ breaks_dao = get_redis_connection("break_time")
 @authentication_classes((JSONWebTokenAuthentication,))
 def pools(request):
     resp = {}
-
+    print("================!!!!!================")
     for i in Pool.objects.all():
         resp['pool_id'] = i['pool_id']
         resp['communication_mode'] = i['communication_mode']
@@ -196,7 +196,10 @@ def exit_with_reward(request):
     :param request:
     :return:
     """
-    now = str(datetime.datetime.now())
+
+    FMT = '%H:%M:%S'
+
+    start = datetime.strptime(datetime.now(), FMT)
     decoded = jwt.decode(get_authorization_header(request).decode('utf-8'), bc.SECRET_KEY)
     user_idx = decoded['user_idx']
 
@@ -205,14 +208,23 @@ def exit_with_reward(request):
     token = pool_token_dao.hget(pool_id, user_idx)
     response = requests.post('https://www.divein.ga', data={'session': pool_id, 'token': token})
 
-    resp = {}
     if response.status_code == 200:
         # 토큰 삭제
         pool_token_dao.hdel(pool_id, user_idx)
-        # 총 소요시간 :: 현재 시간 - 시작 시간
-        total_time = 0
-        # 실 공부시간 :: 현재시간 - [차의 더한 값] - 시작시간 2021-02-05 18:42:31.578393
-        real_time = 0
-        level =
-        return JsonResponse({'user_id': user_idx, 'total_time': total_time, 'real_time': real_time, 'level': level})
 
+        # 총 소요시간 :: 현재 시간 - 시작 시간
+        total_time = datetime.strptime(datetime.now()-start, FMT)
+
+        # 실 공부시간 :: 2021-02-05 18:42:31.578393
+        pure_time = total_time
+
+        breaks = breaks_dao.lrange(user_idx, 0, -1)
+        for k in range(0, len(breaks), 2):
+            pure_time -= (datetime.strptime(breaks[k + 1], FMT) - datetime.strptime(breaks[k], FMT))
+
+        level = "bronze"
+        return JsonResponse({'user_id': user_idx, 'total_time': total_time, 'pure_time': pure_time, 'level': level})
+
+#
+# @api_view
+# def test_insert():
