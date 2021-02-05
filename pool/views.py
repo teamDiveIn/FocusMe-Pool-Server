@@ -37,7 +37,6 @@ def create_interest_for_test(request):
 @api_view(['GET'])
 def pools(request):
     resp = {}
-    print("================!!!!!================")
     for i in Pool.objects.all():
         resp['pool_id'] = i['pool_id']
         resp['communication_mode'] = i['communication_mode']
@@ -68,7 +67,6 @@ def register(request):
             "pool_id" : "dkfjk-fkdjfek-abch-ekrji"
             }
     """
-    print("================!!!!!================")
     pool_id = str(uuid.uuid4())
 
     # interest의 배열들?
@@ -209,11 +207,13 @@ def exit_with_reward(request):
     """
     request.decoded = verify_token(request)
     user_idx = request.decoded
-
+    print("===================================")
     pool_id = Member.objects.get(member_idx=user_idx).pool_id
     print(pool_id)
+    print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
     token = pool_token_dao.hget(pool_id, user_idx)
     print(token)
+    print("this was token")
     headers = {"Authorization": "Bearer " + request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]}
     response = requests.delete('https://webrtc.clubapply.com/webrtc/token',
                                data={'session': pool_id, 'token': token}, headers=headers)
