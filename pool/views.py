@@ -166,6 +166,8 @@ def enter(request):
         # 4. 풀 내 멤버 정보를 DB or cache에서 가져와서 response에 세팅
         member_info = {}
         Member.objects.get(member_idx=user_idx).pool_id = pool_id
+        print(Member.objects.get(member_idx=user_idx).pool_id)
+
         member_records = Member.objects.filter(pool_id=pool_record.pool_id)
         print(member_records)
 
