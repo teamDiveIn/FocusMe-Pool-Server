@@ -205,36 +205,40 @@ def exit_with_reward(request):
     :param request:
     :return:
     """
-    request.decoded = verify_token(request)
-    user_idx = request.decoded
-    print("===================================")
-    pool_id = Member.objects.filter(member_idx=user_idx).pool_id
-    print(pool_id)
-    print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-    token = pool_token_dao.hget(pool_id, user_idx)
-    print(token)
-    print("this was token")
-    headers = {"Authorization": "Bearer " + request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]}
-    response = requests.delete('https://webrtc.clubapply.com/webrtc/token',
-                               data={'session': pool_id, 'token': token}, headers=headers)
-    print(response)
-    print(response.status_code)
-    if response.status_code == 200:
-        # 토큰 삭제
-        pool_token_dao.hdel(pool_id, user_idx)
-        start_time_dao.expire(user_idx, 0)
-        breaks_dao.expire(user_idx, 0)
-        print("after expiration")
+    try:
+        request.decoded = verify_token(request)
+        user_idx = request.decoded
+        print("===================================")
+        pool_id = Member.objects.filter(member_idx=user_idx).pool_id
+        print(pool_id)
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        token = pool_token_dao.hget(pool_id, user_idx)
+        print(token)
+        print("this was token")
+        headers = {"Authorization": "Bearer " + request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]}
+        response = requests.delete('https://webrtc.clubapply.com/webrtc/token',
+                                   data={'session': pool_id, 'token': token}, headers=headers)
+        print(response)
+        print(response.status_code)
+        if response.status_code == 200:
+            # 토큰 삭제
+            pool_token_dao.hdel(pool_id, user_idx)
+            start_time_dao.expire(user_idx, 0)
+            breaks_dao.expire(user_idx, 0)
+            print("after expiration")
 
-        pool_record = Pool.objects.get(pool_id=pool_id)
-        pool_record.current_population -= 1
-        print("pool population change")
+            pool_record = Pool.objects.get(pool_id=pool_id)
+            pool_record.current_population -= 1
+            print("pool population change")
 
-        member_record = Member.objects.get(member_idx=user_idx)
-        level = member_record.level
-        member_record.pool_id = ""  # member의 pool_id 초기화
-        member_record.save()
-        print(level)
-        return JsonResponse({'level': level})
+            member_record = Member.objects.get(member_idx=user_idx)
+            level = member_record.level
+            member_record.pool_id = ""  # member의 pool_id 초기화
+            member_record.save()
+            print(level)
+            return JsonResponse({'level': level})
+    except Exception as e:
+        print(e)
+        return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
