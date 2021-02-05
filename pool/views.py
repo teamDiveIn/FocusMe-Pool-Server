@@ -177,9 +177,14 @@ def enter(request):
 
         for k, member_obj in enumerate(member_records):
             member_idx = member_obj.member_idx
+            print(member_idx)
             start_time = start_time_dao.get(member_idx)
+            print(start_time)
             break_time = list(map(lambda x: x.decode('UTF-8'), breaks_dao.lrange(member_idx, 0, -1)))
+            for i in break_time:
+                print(i)
             member_info += {"nickname": member_obj.nickname, "start_time": start_time, "break_time": break_time}
+            print(member_info)
 
         # 5. 풀의 메타정보, 멤버 정보를 response body 에 세팅
         resp['socket_token'] = socket_token
