@@ -183,7 +183,7 @@ def enter(request):
             break_time = list(map(lambda x: x.decode('UTF-8'), breaks_dao.lrange(member_idx, 0, -1)))
             for i in break_time:
                 print(i)
-            member_info += [{"nickname": member_obj.nickname, "start_time": start_time, "break_time": break_time}]
+            member_info += [{"nickname": member_obj.nickname, "start_time": start_time.decode('UTF-8'), "break_time": break_time}]
             print(member_info)
 
         # 5. 풀의 메타정보, 멤버 정보를 response body 에 세팅
