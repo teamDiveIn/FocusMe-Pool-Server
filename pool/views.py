@@ -19,7 +19,7 @@ start_time_dao = get_redis_connection("start_time")
 breaks_dao = get_redis_connection("break_time")
 
 # Time Format
-FMT = '%D:%H:%M:%S'
+FMT = '%d:%H:%M:%S'
 
 
 @api_view(['GET'])
@@ -137,35 +137,36 @@ def enter(request):
 
     try:
         headers = {"Authorization": "Bearer " + request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]}
+        print(headers)
         # 1. socket connection을 WebRTC 서버와 client가 맺을 수 있도록 token 대신 받아 전해줌
         response = requests.post('https://webrtc.clubapply.com/webrtc/token',
                                  data={'session': pool_id, 'userId': user_idx}, headers=headers)
-        print(response)
-        socket_token = response.json()[0]['token']
 
+        socket_token = response.json()['token']
+        print(socket_token)
         # 2. cache 에 받은 token을 저장
         pool_token_dao.hset(pool_id, user_idx, socket_token)
 
         # 3. 입장 시간 cache 에 기록
-        start_time_dao.set(user_idx, datetime.strptime(datetime.now(), FMT))
+        start_time_dao.set(user_idx, str(datetime.now()))
 
         # 3. 해당 풀에 대한 정보 update 및 response에 세팅
-        pool_record = Pool.objects.get(pool_id=request.POST['pool_id'])
-        print(pool_record)
+        pool_record = Pool.objects.get(pool_id=request.data['pool_id'])
         pool_record.current_population += 1
-
         pool_info = {'pool_id': pool_record.pool_id,
                      'pool_name': pool_record.pool_name,
                      'communication_mode': pool_record.communication_mode,
                      'current_population': pool_record.current_population,
                      'max_population': pool_record.max_population,
-                     'interests': pool_record.interest.objects.values_list('interest_name', flat=True)}
-
+                     'interests': list(pool_record.interest.all())}
+                         # .values_list('interest_name', flat=True)}
         pool_record.save()
         print(pool_record)
+
         # 4. 풀 내 멤버 정보를 DB or cache에서 가져와서 response에 세팅
         member_info = {}
         member_records = Member.objects.filter(pool_id=pool_record.pool_id)
+        print(member_records)
 
         for member_obj in member_records:
             member_idx = member_obj.member_idx
