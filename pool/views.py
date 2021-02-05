@@ -220,7 +220,7 @@ def exit_with_reward(request):
         request.decoded = verify_token(request)
         user_idx = request.decoded
         print("===================================")
-        pool_id = Member.objects.get(member_idx=user_idx).pool_id
+        pool_id = Member.objects.get(member_idx=user_idx).pool_id_id
         print(pool_id)
         print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         token = pool_token_dao.hget(pool_id, user_idx).decode('UTF-8')
