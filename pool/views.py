@@ -177,7 +177,7 @@ def enter(request):
 
         for k, member_obj in enumerate(member_records):
             member_idx = member_obj.member_idx
-            print(member_idx)
+            print(member_obj.nickname)
             start_time = start_time_dao.get(member_idx)
             print(start_time)
             break_time = list(map(lambda x: x.decode('UTF-8'), breaks_dao.lrange(member_idx, 0, -1)))
