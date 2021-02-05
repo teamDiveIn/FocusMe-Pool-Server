@@ -244,8 +244,8 @@ def exit_with_reward(request):
 
             member_record = Member.objects.get(member_idx=user_idx)
             level = member_record.level
-            member_record.pool_id = ""  # member의 pool_id 초기화
-            member_record.save()
+            # member_record.pool_id = ""  # member의 pool_id 초기화
+            # member_record.save()
             print(level)
             return JsonResponse({'level': level})
     except Exception as e:
