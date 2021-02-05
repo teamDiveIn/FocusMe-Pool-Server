@@ -7,7 +7,6 @@ from rest_framework import serializers
 Activate configuration code below only when not running server
 """
 
-
 # import os
 # import django
 #
@@ -46,6 +45,7 @@ class Interest(SingletonModel):
 
 class Pool(SingletonModel):
     pool_id = models.CharField(primary_key=True)
+    pool_name = models.CharField(max_length=50)
     communication_mode = models.CharField(default="agora", max_length=10)
     current_population = models.IntegerField(default=0)
     max_population = models.IntegerField(default=6)
@@ -58,14 +58,3 @@ class Member(SingletonModel):
     nickname = models.CharField(max_length=30)
     level = models.CharField(default="bronze", max_length=10)
     pool_id = models.ForeignKey(Pool, on_delete=models.CASCADE)
-
-
-# class PoolSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Pool
-#         exclude = ('pool_idx',)
-#
-#
-# class MappingInterestPool(SingletonModel):
-#     pool_idx = models.ForeignKey(Pool.pool_idx, on_delete=models.CASCADE)
-#     interest_idx = models.ForeignKey(Interest.interest_idx, on_delete=models.CASCADE)

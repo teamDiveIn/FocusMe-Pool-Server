@@ -13,7 +13,6 @@ from configuration import basic_config as bc
 pool_token_dao = get_redis_connection("default")
 start_time_dao = get_redis_connection("start_time")
 breaks_dao = get_redis_connection("break_time")
-get_redis_connection("pool")
 
 
 @api_view(['GET'])
@@ -84,12 +83,15 @@ def enter(request):
                     [
                         "sw-hackaton",
                         "focuswithme"
-                    ]
+                    ],
+        "pool_info" :{
+
+        }
         "communication_mode" : "silent",
         "current_population": 2,
         "max_population": 6,
         "socket_token" : "wss://~~",
-        "member" : [
+        "member_info" : [
                     {
                     "nickname" : "예준",
                     "start_time" : "",
@@ -124,8 +126,11 @@ def enter(request):
         pool_record = Pool.objects.get(pool_id=request.POST['pool_id'])
         pool_record.current_population += 1
 
-        pool_info = {'pool_id': pool_record.pool_id, 'communication_mode': pool_record.communication_mode,
-                     'current_population': pool_record.current_population, 'max_population': pool_record.max_population,
+        pool_info = {'pool_id': pool_record.pool_id,
+                     'pool_name': pool_record.pool_name,
+                     'communication_mode': pool_record.communication_mode,
+                     'current_population': pool_record.current_population,
+                     'max_population': pool_record.max_population,
                      'interests': pool_record.interest.objects.values_list('interest_name', flat=True)}
 
         pool_record.save()
@@ -147,7 +152,6 @@ def enter(request):
         return JsonResponse(resp)
 
     except:
-
         return
 
 
@@ -197,12 +201,3 @@ def exit_with_reward(request):
         pool_token_dao.hdel(pool_id, user_idx)  # 토큰 삭제
         return JsonResponse({'user_id': user_idx})
 
-
-def token_off(user_token):
-
-    # TODO
-    return "user_idx"
-
-
-def thumbnail(request):
-    return None
