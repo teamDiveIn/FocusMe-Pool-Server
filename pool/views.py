@@ -56,8 +56,9 @@ def register(request):
             "pool_id" : "dkfjk-fkdjfek-abch-ekrji"
             }
     """
-
+    print("================!!!!!================")
     pool_id = str(uuid.uuid4())
+    print(pool_id)
     Pool(pool_id=pool_id,
          pool_name=request.POST['pool_name'],
          interest=request.POST['interest'],
@@ -156,8 +157,9 @@ def enter(request):
 
         return JsonResponse(resp)
 
-    except:
-        return
+    except Exception as e:
+        print(e)
+        return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['POST'])
@@ -222,9 +224,11 @@ def exit_with_reward(request):
             pure_time -= (datetime.strptime(breaks[k + 1].decode('UTF-8'), FMT) - datetime.strptime(
                 breaks[k].decode('UTF-8'), FMT))
 
+        breaks_dao.expire(user_idx, 0)
+
         member_record = Member.objects.get(member_idx=user_idx)
         level = member_record.level
-        member_record.pool_id = ""
+        member_record.pool_id = ""  # member의 pool_id 초기화
         member_record.save()
         return JsonResponse({'user_id': user_idx, 'total_time': total_time, 'pure_time': pure_time, 'level': level})
 
