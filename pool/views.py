@@ -82,7 +82,8 @@ def register(request):
             # item.interest_name = "영어말하기"
             # pool_record.interest.add(item)
             pool_record.interest.add(Interest.objects.get(interest_name=name))
-        except:
+        except Exception as e:
+            print(e)
             print("exceptttttttttttttttt")
             # pass
 
@@ -165,6 +166,10 @@ def enter(request):
 
         # 4. 풀 내 멤버 정보를 DB or cache에서 가져와서 response에 세팅
         member_info = {}
+        headers = {"Authorization": "Bearer " + request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]}
+        response = requests.post('https://api.divein.club/api/auth/user/verify', headers=headers)
+
+        Member(member_idx=user_idx, nickname=response.json()['data']['nickname'], level="gold", pool_id=pool_id).save()
         Member.objects.get(member_idx=user_idx).pool_id = pool_id
         print(Member.objects.get(member_idx=user_idx).pool_id)
 
