@@ -9,12 +9,4 @@ https://docs.djangoproject.com/en/3.1/howto/deployment/asgi/
 
 import os
 
-from django.core.asgi import get_asgi_application
-from channels.routing import ProtocolTypeRouter
-
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'DiveIn_Pool_Server.settings')
-
-application = ProtocolTypeRouter({
-    "http": get_asgi_application(),
-    # Just HTTP for now. (We can add other protocols later.)
-})

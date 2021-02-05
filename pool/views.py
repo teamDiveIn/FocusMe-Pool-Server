@@ -123,8 +123,6 @@ def enter(request):
         # 2. cache 에 받은 token을 저장
         get_redis_connection("pool").hset(pool_id, user_idx, socket_token)
 
-        resp['socket_token'] = socket_token
-
         # 3. 입장 시간 cache 에 기록
         start_time_dao.set(user_idx, str(datetime.datetime.now()))
 
@@ -152,6 +150,7 @@ def enter(request):
             member_info += {"nickname": member_obj.nickname, "start_time": start_time, "break_time": break_time}
 
         # 5. 풀의 메타정보, 멤버 정보를 response body 에 세팅
+        resp['socket_token'] = socket_token
         resp['pool_info'] = pool_info
         resp['member_info'] = member_info
 
@@ -183,7 +182,9 @@ def back(request):
     :param request:
     :return:
     """
-    breaks_dao.rpush(str(datetime.datetime.now()))
+    decoded = jwt.decode(get_authorization_header(request).decode('utf-8'), bc.SECRET_KEY)
+    user_idx = decoded['user_idx']
+    breaks_dao.rpush(user_idx, str(datetime.datetime.now()))
     return Response(status=status.HTTP_200_OK)
 
 
@@ -206,9 +207,12 @@ def exit_with_reward(request):
 
     resp = {}
     if response.status_code == 200:
-        pool_token_dao.hdel(pool_id, user_idx)  # 토큰 삭제
-
-
-        resp['start_time'] = start_time_dao.get(user_idx) # 총 소요시간
-        return JsonResponse({'user_id': user_idx})
+        # 토큰 삭제
+        pool_token_dao.hdel(pool_id, user_idx)
+        # 총 소요시간 :: 현재 시간 - 시작 시간
+        total_time = 0
+        # 실 공부시간 :: 현재시간 - [차의 더한 값] - 시작시간 2021-02-05 18:42:31.578393
+        real_time = 0
+        level =
+        return JsonResponse({'user_id': user_idx, 'total_time': total_time, 'real_time': real_time, 'level': level})
 
