@@ -76,14 +76,17 @@ def register(request):
                        pool_name=request.data['pool_name'],
                        communication_mode=request.data['communication_mode'],
                        max_population=request.data['max_population'])
-
+    print((request.data['interest']))
     for name in request.data['interest']:
         print(name)
         try:
-            item = Interest.objects.get(interest_name=name)
-            pool_record.interest.add(item)
+            # item = Interest.objects.get(interest_idx=5)
+            # item.interest_name = "영어말하기"
+            # pool_record.interest.add(item)
+            pool_record.interest.add(Interest.objects.get(interest_name=name))
         except:
-            pass
+            print("exceptttttttttttttttt")
+            # pass
 
     pool_record.save()
 
@@ -217,17 +220,6 @@ def exit_with_reward(request):
         pool_token_dao.hdel(pool_id, user_idx)
         start_time_dao.expire(user_idx, 0)
         breaks_dao.expire(user_idx, 0)
-
-        # 총 소요시간 :: 현재 시간 - 시작 시간
-        # total_time = datetime.strptime(datetime.now() - start, FMT)
-        #
-        # pure_time = total_time
-
-        # breaks = breaks_dao.lrange(user_idx, 0, -1)
-        # for k in range(0, len(breaks), 2):
-        #     pure_time -= (datetime.strptime(breaks[k + 1].decode('UTF-8'), FMT) - datetime.strptime(
-        #         breaks[k].decode('UTF-8'), FMT))
-
         member_record = Member.objects.get(member_idx=user_idx)
         level = member_record.level
         member_record.pool_id = ""  # member의 pool_id 초기화
