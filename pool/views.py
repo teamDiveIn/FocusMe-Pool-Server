@@ -169,7 +169,7 @@ def enter(request):
         headers = {"Authorization": "Bearer " + request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]}
         response = requests.post('https://api.divein.club/api/auth/user/verify', headers=headers)
 
-        Member(member_idx=user_idx, nickname=response.json()['data']['nickname'], level="gold", pool_id=pool_id).save()
+        Member(member_idx=user_idx, nickname=response.json()['data']['nickname'], level="gold", pool_id_id=pool_id).save()
         Member.objects.get(member_idx=user_idx).pool_id = pool_id
         print(Member.objects.get(member_idx=user_idx).pool_id)
 
