@@ -161,7 +161,7 @@ def enter(request):
                      'communication_mode': pool_record.communication_mode,
                      'current_population': pool_record.current_population,
                      'max_population': pool_record.max_population,
-                     'interests': list(pool_record.interest.all())}
+                     'interests': pool_record.interest.values_list('interest_name', flat=True)}
         pool_record.save()
 
         # 4. 풀 내 멤버 정보를 DB or cache에서 가져와서 response에 세팅
