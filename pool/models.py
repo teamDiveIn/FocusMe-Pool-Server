@@ -50,7 +50,6 @@ class Pool(SingletonModel):
     current_population = models.IntegerField(default=0)
     max_population = models.IntegerField(default=6)
     interest = models.ManyToManyField(Interest)
-    # interest_idx = models.ManyToManyField(Interest, through='MappingInterestPool')
 
 
 class Member(SingletonModel):

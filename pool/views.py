@@ -85,11 +85,11 @@ def enter(request):
                         "focuswithme"
                     ],
         "pool_info" :{
-
+                "communication_mode" : "silent",
+                "current_population": 2,
+                "max_population": 6,
         }
-        "communication_mode" : "silent",
-        "current_population": 2,
-        "max_population": 6,
+
         "socket_token" : "wss://~~",
         "member_info" : [
                     {
