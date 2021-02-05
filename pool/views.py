@@ -161,7 +161,7 @@ def enter(request):
                      'communication_mode': pool_record.communication_mode,
                      'current_population': pool_record.current_population,
                      'max_population': pool_record.max_population,
-                     'interests': pool_record.interest.values_list('interest_name', flat=True)}
+                     'interests': list(pool_record.interest.values_list('interest_name', flat=True))}
         print(pool_info['interests'])
         pool_record.save()
 
