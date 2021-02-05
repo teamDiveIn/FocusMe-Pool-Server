@@ -1,8 +1,7 @@
 import uuid
 import requests
-from rest_framework.decorators import api_view, permission_classes, authentication_classes
-from rest_framework.permissions import IsAuthenticated
-from rest_framework_jwt.authentication import JSONWebTokenAuthentication, get_authorization_header
+from rest_framework.decorators import api_view
+from rest_framework_jwt.authentication import get_authorization_header
 from django.http import JsonResponse
 from rest_framework import status
 from rest_framework.response import Response
@@ -26,6 +25,7 @@ FMT = '%d:%H:%M:%S'
 def test(request):
     print("200 please")
     return Response(status=status.HTTP_200_OK)
+
 
 @api_view(['POST'])
 def create_interest_for_test(request):
@@ -159,9 +159,7 @@ def enter(request):
                      'current_population': pool_record.current_population,
                      'max_population': pool_record.max_population,
                      'interests': list(pool_record.interest.all())}
-                         # .values_list('interest_name', flat=True)}
         pool_record.save()
-        print(pool_record)
 
         # 4. 풀 내 멤버 정보를 DB or cache에서 가져와서 response에 세팅
         member_info = {}
@@ -192,21 +190,9 @@ def leave(request):
     :param request:
     :return:
     """
-    decoded = jwt.decode(get_authorization_header(request).decode('utf-8'), bc.SECRET_KEY)
-    user_idx = decoded['user_idx']
-    breaks_dao.rpush(user_idx, datetime.strptime(datetime.now(), FMT))
-    return Response(status=status.HTTP_200_OK)
-
-
-@api_view(['POST'])
-def back(request):
-    """
-    :param request:
-    :return:
-    """
-    decoded = jwt.decode(get_authorization_header(request).decode('utf-8'), bc.SECRET_KEY)
-    user_idx = decoded['user_idx']
-    breaks_dao.rpush(user_idx, str(datetime.datetime.now()))
+    request.decoded = verify_token(request)
+    user_idx = request.decoded
+    breaks_dao.rpush(user_idx, str(datetime.now()))
     return Response(status=status.HTTP_200_OK)
 
 
@@ -216,34 +202,35 @@ def exit_with_reward(request):
     :param request:
     :return:
     """
+    request.decoded = verify_token(request)
+    user_idx = request.decoded
 
-    start = datetime.strptime(datetime.now(), FMT)
-    decoded = jwt.decode(get_authorization_header(request).decode('utf-8'), bc.SECRET_KEY)
-    user_idx = decoded['user_idx']
-
-    # DB에서 참여하고 있던 pool id 확인
     pool_id = Member.objects.get(member_idx=user_idx).pool_id
     token = pool_token_dao.hget(pool_id, user_idx)
-    response = requests.post('https://www.divein.ga', data={'session': pool_id, 'token': token})
+
+    headers = {"Authorization": "Bearer " + request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]}
+    response = requests.delete('https://webrtc.clubapply.com/webrtc/token',
+                               data={'session': pool_id, 'token': token}, headers=headers)
 
     if response.status_code == 200:
         # 토큰 삭제
         pool_token_dao.hdel(pool_id, user_idx)
+        start_time_dao.expire(user_idx, 0)
+        breaks_dao.expire(user_idx, 0)
 
         # 총 소요시간 :: 현재 시간 - 시작 시간
-        total_time = datetime.strptime(datetime.now() - start, FMT)
+        # total_time = datetime.strptime(datetime.now() - start, FMT)
+        #
+        # pure_time = total_time
 
-        pure_time = total_time
-
-        breaks = breaks_dao.lrange(user_idx, 0, -1)
-        for k in range(0, len(breaks), 2):
-            pure_time -= (datetime.strptime(breaks[k + 1].decode('UTF-8'), FMT) - datetime.strptime(
-                breaks[k].decode('UTF-8'), FMT))
-
-        breaks_dao.expire(user_idx, 0)
+        # breaks = breaks_dao.lrange(user_idx, 0, -1)
+        # for k in range(0, len(breaks), 2):
+        #     pure_time -= (datetime.strptime(breaks[k + 1].decode('UTF-8'), FMT) - datetime.strptime(
+        #         breaks[k].decode('UTF-8'), FMT))
 
         member_record = Member.objects.get(member_idx=user_idx)
         level = member_record.level
         member_record.pool_id = ""  # member의 pool_id 초기화
         member_record.save()
-        return JsonResponse({'user_id': user_idx, 'total_time': total_time, 'pure_time': pure_time, 'level': level})
+        print(level)
+        return JsonResponse({'level': level})

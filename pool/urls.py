@@ -8,6 +8,6 @@ urlpatterns = [
     path('register', views.register),
     path('enter', views.enter),
     path('leave', views.leave),
-    path('back', views.back),
+    path('back', views.leave),
     path('exit', views.exit_with_reward)
 ]
