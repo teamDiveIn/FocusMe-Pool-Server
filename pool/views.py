@@ -211,6 +211,7 @@ def exit_with_reward(request):
     user_idx = request.decoded
 
     pool_id = Member.objects.get(member_idx=user_idx).pool_id
+    print(pool_id)
     token = pool_token_dao.hget(pool_id, user_idx)
     print(token)
     headers = {"Authorization": "Bearer " + request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]}
@@ -224,6 +225,11 @@ def exit_with_reward(request):
         start_time_dao.expire(user_idx, 0)
         breaks_dao.expire(user_idx, 0)
         print("after expiration")
+
+        pool_record = Pool.objects.get(pool_id=pool_id)
+        pool_record.current_population -= 1
+        print("pool population change")
+
         member_record = Member.objects.get(member_idx=user_idx)
         level = member_record.level
         member_record.pool_id = ""  # member의 pool_id 초기화
