@@ -212,7 +212,7 @@ def exit_with_reward(request):
 
     pool_id = Member.objects.get(member_idx=user_idx).pool_id
     token = pool_token_dao.hget(pool_id, user_idx)
-
+    print(token)
     headers = {"Authorization": "Bearer " + request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]}
     response = requests.delete('https://webrtc.clubapply.com/webrtc/token',
                                data={'session': pool_id, 'token': token}, headers=headers)
