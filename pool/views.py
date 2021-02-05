@@ -167,6 +167,7 @@ def enter(request):
 
         # 4. 풀 내 멤버 정보를 DB or cache에서 가져와서 response에 세팅
         member_info = {}
+        Member.objects.get(member_idx=user_idx).pool_id = pool_id
         member_records = Member.objects.filter(pool_id=pool_record.pool_id)
         print(member_records)
 
@@ -215,15 +216,18 @@ def exit_with_reward(request):
     headers = {"Authorization": "Bearer " + request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]}
     response = requests.delete('https://webrtc.clubapply.com/webrtc/token',
                                data={'session': pool_id, 'token': token}, headers=headers)
-
+    print(response.status_code)
     if response.status_code == 200:
         # 토큰 삭제
         pool_token_dao.hdel(pool_id, user_idx)
         start_time_dao.expire(user_idx, 0)
         breaks_dao.expire(user_idx, 0)
+        print("after expiration")
         member_record = Member.objects.get(member_idx=user_idx)
         level = member_record.level
         member_record.pool_id = ""  # member의 pool_id 초기화
         member_record.save()
         print(level)
         return JsonResponse({'level': level})
+    else:
+        return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
