@@ -216,6 +216,7 @@ def exit_with_reward(request):
     headers = {"Authorization": "Bearer " + request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]}
     response = requests.delete('https://webrtc.clubapply.com/webrtc/token',
                                data={'session': pool_id, 'token': token}, headers=headers)
+    print(response)
     print(response.status_code)
     if response.status_code == 200:
         # 토큰 삭제
