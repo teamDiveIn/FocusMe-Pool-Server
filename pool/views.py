@@ -6,21 +6,35 @@ from rest_framework_jwt.authentication import JSONWebTokenAuthentication, get_au
 from django.http import JsonResponse
 from rest_framework import status
 from rest_framework.response import Response
-from pool.models import Pool, Member
+from pool.models import Pool, Member, Interest
 from django_redis import get_redis_connection
 import jwt
 from configuration import basic_config as bc
 from datetime import datetime
+from pool.token_checker import *
 
 # Redis
 pool_token_dao = get_redis_connection("default")
 start_time_dao = get_redis_connection("start_time")
 breaks_dao = get_redis_connection("break_time")
 
+# Time Format
+FMT = '%D:%H:%M:%S'
+
 
 @api_view(['GET'])
-@permission_classes((IsAuthenticated,))
-@authentication_classes((JSONWebTokenAuthentication,))
+def test(request):
+    print("200 please")
+    return Response(status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+def create_interest_for_test(request):
+    request.decoded = verify_token(request)
+    Interest(interest_name=request.data['interest']).save()
+    return Response(status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
 def pools(request):
     resp = {}
     print("================!!!!!================")
@@ -35,8 +49,6 @@ def pools(request):
 
 
 @api_view(['POST'])
-@permission_classes((IsAuthenticated,))
-@authentication_classes((JSONWebTokenAuthentication,))
 def register(request):
     """
     :param request:
@@ -58,19 +70,27 @@ def register(request):
     """
     print("================!!!!!================")
     pool_id = str(uuid.uuid4())
-    print(pool_id)
-    Pool(pool_id=pool_id,
-         pool_name=request.POST['pool_name'],
-         interest=request.POST['interest'],
-         communication_mode=request.POST['communication_mode'],
-         max_population=request.POST['max_population']).save()
+
+    # interest의 배열들?
+    pool_record = Pool(pool_id=pool_id,
+                       pool_name=request.data['pool_name'],
+                       communication_mode=request.data['communication_mode'],
+                       max_population=request.data['max_population'])
+
+    for name in request.data['interest']:
+        print(name)
+        try:
+            item = Interest.objects.get(interest_name=name)
+            pool_record.interest.add(item)
+        except:
+            pass
+
+    pool_record.save()
 
     return JsonResponse({"pool_id": pool_id})
 
 
 @api_view(['POST'])
-@permission_classes((IsAuthenticated,))
-@authentication_classes((JSONWebTokenAuthentication,))
 def enter(request):
     """
     socket 관련 통신
@@ -111,24 +131,27 @@ def enter(request):
     }
     """
     resp = {}
-    decoded = jwt.decode(get_authorization_header(request).decode('utf-8'), bc.SECRET_KEY)
-    user_idx = decoded['user_idx']
-    pool_id = Pool.objects.get(user_id=user_idx).pool_id
+    request.decoded = verify_token(request)
+    user_idx = request.decoded
+    pool_id = request.data['pool_id']
 
     try:
+        headers = {"Authorization": "Bearer " + request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]}
         # 1. socket connection을 WebRTC 서버와 client가 맺을 수 있도록 token 대신 받아 전해줌
-        response = requests.post('https://www.divein.ga/token',
-                                 data={'session': pool_id, 'userId': user_idx})
+        response = requests.post('https://webrtc.clubapply.com/webrtc/token',
+                                 data={'session': pool_id, 'userId': user_idx}, headers=headers)
+        print(response)
         socket_token = response.json()[0]['token']
 
         # 2. cache 에 받은 token을 저장
-        get_redis_connection("pool").hset(pool_id, user_idx, socket_token)
+        pool_token_dao.hset(pool_id, user_idx, socket_token)
 
         # 3. 입장 시간 cache 에 기록
-        start_time_dao.set(user_idx, str(datetime.datetime.now()))
+        start_time_dao.set(user_idx, datetime.strptime(datetime.now(), FMT))
 
         # 3. 해당 풀에 대한 정보 update 및 response에 세팅
         pool_record = Pool.objects.get(pool_id=request.POST['pool_id'])
+        print(pool_record)
         pool_record.current_population += 1
 
         pool_info = {'pool_id': pool_record.pool_id,
@@ -139,7 +162,7 @@ def enter(request):
                      'interests': pool_record.interest.objects.values_list('interest_name', flat=True)}
 
         pool_record.save()
-
+        print(pool_record)
         # 4. 풀 내 멤버 정보를 DB or cache에서 가져와서 response에 세팅
         member_info = {}
         member_records = Member.objects.filter(pool_id=pool_record.pool_id)
@@ -163,8 +186,6 @@ def enter(request):
 
 
 @api_view(['POST'])
-@permission_classes((IsAuthenticated,))
-@authentication_classes((JSONWebTokenAuthentication,))
 def leave(request):
     """
     :param request:
@@ -172,13 +193,11 @@ def leave(request):
     """
     decoded = jwt.decode(get_authorization_header(request).decode('utf-8'), bc.SECRET_KEY)
     user_idx = decoded['user_idx']
-    breaks_dao.rpush(user_idx, str(datetime.datetime.now()))
+    breaks_dao.rpush(user_idx, datetime.strptime(datetime.now(), FMT))
     return Response(status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
-@permission_classes((IsAuthenticated,))
-@authentication_classes((JSONWebTokenAuthentication,))
 def back(request):
     """
     :param request:
@@ -191,15 +210,11 @@ def back(request):
 
 
 @api_view(['POST'])
-@permission_classes((IsAuthenticated,))
-@authentication_classes((JSONWebTokenAuthentication,))
 def exit_with_reward(request):
     """
     :param request:
     :return:
     """
-
-    FMT = '%H:%M:%S'
 
     start = datetime.strptime(datetime.now(), FMT)
     decoded = jwt.decode(get_authorization_header(request).decode('utf-8'), bc.SECRET_KEY)
@@ -231,7 +246,3 @@ def exit_with_reward(request):
         member_record.pool_id = ""  # member의 pool_id 초기화
         member_record.save()
         return JsonResponse({'user_id': user_idx, 'total_time': total_time, 'pure_time': pure_time, 'level': level})
-
-#
-# @api_view
-# def test_insert():

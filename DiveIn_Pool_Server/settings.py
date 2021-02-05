@@ -48,23 +48,6 @@ CORS_ALLOW_HEADERS = default_headers + (
     'Access-Control-Allow-Origin',
 )
 
-REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-    ),
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_jwt.authentication.JSONWebTokenAuthentication'
-    ),
-}
-
-JWT_AUTH = {
-    'JWT_SECRET_KEY': bc.JWT_SECRET_KEY,
-    'JWT_ALGORITHM': 'HS256',
-    'JWT_ALLOW_REFRESH': True,
-    'JWT_EXPIRATION_DELTA': datetime.timedelta(hours=12),
-    'JWT_REFRESH_EXPIRATION_DELTA': datetime.timedelta(days=14),
-}
-
 ROOT_URLCONF = 'DiveIn_Pool_Server.urls'
 
 TEMPLATES = [
