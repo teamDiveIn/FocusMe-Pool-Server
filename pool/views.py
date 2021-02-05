@@ -4,10 +4,13 @@ from rest_framework.decorators import api_view, permission_classes, authenticati
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_jwt.authentication import JSONWebTokenAuthentication, get_authorization_header
 from django.http import JsonResponse
+from rest_framework import status
+from rest_framework.response import Response
 from pool.models import Pool, Member
 from django_redis import get_redis_connection
 import jwt
 from configuration import basic_config as bc
+import datetime
 
 # Redis
 pool_token_dao = get_redis_connection("default")
@@ -20,6 +23,7 @@ breaks_dao = get_redis_connection("break_time")
 @authentication_classes((JSONWebTokenAuthentication,))
 def pools(request):
     resp = {}
+
     for i in Pool.objects.all():
         resp['pool_id'] = i['pool_id']
         resp['communication_mode'] = i['communication_mode']
@@ -30,7 +34,7 @@ def pools(request):
     return JsonResponse(resp)
 
 
-@api_view('POST')
+@api_view(['POST'])
 @permission_classes((IsAuthenticated, ))
 @authentication_classes((JSONWebTokenAuthentication,))
 def register(request):
@@ -78,19 +82,18 @@ def enter(request):
 
     :return:
     {
-        "pool_name": "fighting"
-        "interest" :
-                    [
-                        "sw-hackaton",
-                        "focuswithme"
-                    ],
+        "socket_token" : "wss://~~",
         "pool_info" :{
+                "pool_id" : "",
+                "pool_name" : "",
+                "interest" : [
+                            "sw-hackaton",
+                            "focuswithme"
+                            ]
                 "communication_mode" : "silent",
                 "current_population": 2,
                 "max_population": 6,
-        }
-
-        "socket_token" : "wss://~~",
+                }
         "member_info" : [
                     {
                     "nickname" : "예준",
@@ -122,6 +125,9 @@ def enter(request):
 
         resp['socket_token'] = socket_token
 
+        # 3. 입장 시간 cache 에 기록
+        start_time_dao.set(user_idx, str(datetime.datetime.now()))
+
         # 3. 해당 풀에 대한 정보 update 및 response에 세팅
         pool_record = Pool.objects.get(pool_id=request.POST['pool_id'])
         pool_record.current_population += 1
@@ -142,7 +148,7 @@ def enter(request):
         for member_obj in member_records:
             member_idx = member_obj.member_idx
             start_time = start_time_dao.get(member_idx)
-            break_time = breaks_dao.hget(pool_id, member_idx).decode('UTF-8')
+            break_time = list(map(lambda x: x.decode('UTF-8'), breaks_dao.lrange(member_idx, 0, -1)))
             member_info += {"nickname": member_obj.nickname, "start_time": start_time, "break_time": break_time}
 
         # 5. 풀의 메타정보, 멤버 정보를 response body 에 세팅
@@ -162,10 +168,11 @@ def leave(request):
     """
     :param request:
     :return:
-    TODO socket 써
     """
     decoded = jwt.decode(get_authorization_header(request).decode('utf-8'), bc.SECRET_KEY)
     user_idx = decoded['user_idx']
+    breaks_dao.rpush(user_idx, str(datetime.datetime.now()))
+    return Response(status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -173,11 +180,11 @@ def leave(request):
 @authentication_classes((JSONWebTokenAuthentication,))
 def back(request):
     """
-    TODO 쉬는 시간으로 전환, 서버에 쉬는 시간 기록
     :param request:
     :return:
     """
-    return None
+    breaks_dao.rpush(str(datetime.datetime.now()))
+    return Response(status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -185,7 +192,6 @@ def back(request):
 @authentication_classes((JSONWebTokenAuthentication,))
 def exit_with_reward(request):
     """
-    TODO 노드 앞단 서버로 socket connection 끊는 요청 Rest로 보내기, 그 결과 반환
     :param request:
     :return:
     """
@@ -197,7 +203,9 @@ def exit_with_reward(request):
     token = pool_token_dao.hget(pool_id, user_idx)
     response = requests.post('https://www.divein.ga', data={'session': pool_id, 'token': token})
 
+    resp = {}
     if response.status_code == 200:
         pool_token_dao.hdel(pool_id, user_idx)  # 토큰 삭제
+        resp['start_time']  = start_time_dao.get(user_idx)
         return JsonResponse({'user_id': user_idx})
 
