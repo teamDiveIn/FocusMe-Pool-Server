@@ -175,7 +175,7 @@ def enter(request):
         member_records = Member.objects.filter(pool_id=pool_record.pool_id)
         print(member_records)
 
-        for member_obj in list(member_records):
+        for k, member_obj in enumerate(member_records):
             member_idx = member_obj.member_idx
             start_time = start_time_dao.get(member_idx)
             break_time = list(map(lambda x: x.decode('UTF-8'), breaks_dao.lrange(member_idx, 0, -1)))
