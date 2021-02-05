@@ -19,7 +19,7 @@ breaks_dao = get_redis_connection("break_time")
 
 
 @api_view(['GET'])
-@permission_classes((IsAuthenticated, ))
+@permission_classes((IsAuthenticated,))
 @authentication_classes((JSONWebTokenAuthentication,))
 def pools(request):
     resp = {}
@@ -35,7 +35,7 @@ def pools(request):
 
 
 @api_view(['POST'])
-@permission_classes((IsAuthenticated, ))
+@permission_classes((IsAuthenticated,))
 @authentication_classes((JSONWebTokenAuthentication,))
 def register(request):
     """
@@ -68,7 +68,7 @@ def register(request):
 
 
 @api_view(['POST'])
-@permission_classes((IsAuthenticated, ))
+@permission_classes((IsAuthenticated,))
 @authentication_classes((JSONWebTokenAuthentication,))
 def enter(request):
     """
@@ -161,7 +161,7 @@ def enter(request):
 
 
 @api_view(['POST'])
-@permission_classes((IsAuthenticated, ))
+@permission_classes((IsAuthenticated,))
 @authentication_classes((JSONWebTokenAuthentication,))
 def leave(request):
     """
@@ -175,7 +175,7 @@ def leave(request):
 
 
 @api_view(['POST'])
-@permission_classes((IsAuthenticated, ))
+@permission_classes((IsAuthenticated,))
 @authentication_classes((JSONWebTokenAuthentication,))
 def back(request):
     """
@@ -189,7 +189,7 @@ def back(request):
 
 
 @api_view(['POST'])
-@permission_classes((IsAuthenticated, ))
+@permission_classes((IsAuthenticated,))
 @authentication_classes((JSONWebTokenAuthentication,))
 def exit_with_reward(request):
     """
@@ -213,16 +213,19 @@ def exit_with_reward(request):
         pool_token_dao.hdel(pool_id, user_idx)
 
         # 총 소요시간 :: 현재 시간 - 시작 시간
-        total_time = datetime.strptime(datetime.now()-start, FMT)
+        total_time = datetime.strptime(datetime.now() - start, FMT)
 
-        # 실 공부시간 :: 2021-02-05 18:42:31.578393
         pure_time = total_time
 
         breaks = breaks_dao.lrange(user_idx, 0, -1)
         for k in range(0, len(breaks), 2):
-            pure_time -= (datetime.strptime(breaks[k + 1], FMT) - datetime.strptime(breaks[k], FMT))
+            pure_time -= (datetime.strptime(breaks[k + 1].decode('UTF-8'), FMT) - datetime.strptime(
+                breaks[k].decode('UTF-8'), FMT))
 
-        level = "bronze"
+        member_record = Member.objects.get(member_idx=user_idx)
+        level = member_record.level
+        member_record.pool_id = ""
+        member_record.save()
         return JsonResponse({'user_id': user_idx, 'total_time': total_time, 'pure_time': pure_time, 'level': level})
 
 #
