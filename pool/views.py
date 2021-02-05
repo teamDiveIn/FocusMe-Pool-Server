@@ -223,7 +223,7 @@ def exit_with_reward(request):
         pool_id = Member.objects.get(member_idx=user_idx).pool_id
         print(pool_id)
         print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        token = pool_token_dao.hget(pool_id, user_idx)
+        token = pool_token_dao.hget(pool_id, user_idx).decode('UTF-8')
         print(token)
         print("this was token")
         headers = {"Authorization": "Bearer " + request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]}
