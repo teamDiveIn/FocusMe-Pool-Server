@@ -44,7 +44,7 @@ class Interest(SingletonModel):
 
 
 class Pool(SingletonModel):
-    pool_id = models.CharField(primary_key=True)
+    pool_id = models.CharField(primary_key=True, max_length=30)
     pool_name = models.CharField(max_length=50)
     communication_mode = models.CharField(default="agora", max_length=10)
     current_population = models.IntegerField(default=0)

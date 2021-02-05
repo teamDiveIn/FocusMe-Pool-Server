@@ -195,6 +195,7 @@ def exit_with_reward(request):
     :param request:
     :return:
     """
+    now = str(datetime.datetime.now())
     decoded = jwt.decode(get_authorization_header(request).decode('utf-8'), bc.SECRET_KEY)
     user_idx = decoded['user_idx']
 
@@ -206,6 +207,8 @@ def exit_with_reward(request):
     resp = {}
     if response.status_code == 200:
         pool_token_dao.hdel(pool_id, user_idx)  # 토큰 삭제
-        resp['start_time']  = start_time_dao.get(user_idx)
+
+
+        resp['start_time'] = start_time_dao.get(user_idx) # 총 소요시간
         return JsonResponse({'user_id': user_idx})
 
