@@ -4,11 +4,6 @@ templates/
 .idea/
 db.sqlite3
 templates/requirements.txt
-docker-compose.yml
-dockerfile
-.env
-todo
 configuration/
 migrations
-.docker/
-*.txt
+.env

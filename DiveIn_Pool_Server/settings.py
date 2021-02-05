@@ -97,8 +97,8 @@ DATABASES = {
 
 CACHES = {
     "default": rc.REDIS_TOKEN_INFO,
-    "start": rc.REDIS_START_INFO,
-    "break": rc.REDIS_BREAK_INFO,
+    "start_time": rc.REDIS_START_INFO,
+    "break_time": rc.REDIS_BREAK_INFO,
 }
 
 # Password validation

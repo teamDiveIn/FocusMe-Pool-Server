@@ -11,8 +11,8 @@ class ChatConsumer(WebsocketConsumer):
 
     def receive(self, thumnail_url):
         text_data_json = json.loads(thumnail_url)
-        message = text_data_json['message']
+        message = text_data_json['s3_url']
 
         self.send(text_data=json.dumps({
-            'message': message
+            's3_url': message
         }))

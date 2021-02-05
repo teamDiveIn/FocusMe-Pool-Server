@@ -57,7 +57,7 @@ class Member(SingletonModel):
     member_idx = models.IntegerField(primary_key=True)
     nickname = models.CharField(max_length=30)
     level = models.CharField(default="bronze", max_length=10)
-    pool_id = models.ForeignKey(Pool.pool_id, on_delete=models.CASCADE)
+    pool_id = models.ForeignKey(Pool, on_delete=models.CASCADE)
 
 
 # class PoolSerializer(serializers.ModelSerializer):
